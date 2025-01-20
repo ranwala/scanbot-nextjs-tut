@@ -12,7 +12,7 @@ export default function Home() {
     async function init() {
       await ScanbotSDK.initialize({
         licenseKey: "",
-        engine: "/wasm/"
+        enginePath: "/wasm/"
       });
     }
     init();
