@@ -1,25 +1,32 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import ScanbotSDK from "scanbot-web-sdk/ui";
+import type ScanbotSDK from "scanbot-web-sdk/UI";
 
 export default function Home() {
 
   const [scanResult, setScanResult] = useState("");
+  let DynScanbotSDK: typeof ScanbotSDK;
 
   // initialize the Scanbot Barcode SDK
   useEffect(() => {
-    async function init() {
-      await ScanbotSDK.initialize({
-        licenseKey: "",
-        enginePath: "/wasm/"
-      });
-    }
-    init();
-  }, []);
+    loadSDK();
+  });
+
+  async function loadSDK() {
+    // Use dynamic inline imports to load the SDK, else Next will load it into the server bundle
+    // and attempt to load it before the 'window' object becomes available.
+    // https://nextjs.org/docs/pages/building-your-application/optimizing/lazy-loading
+    DynScanbotSDK = (await import('scanbot-web-sdk/UI')).default;
+
+    await DynScanbotSDK.initialize({
+      licenseKey: "",
+      enginePath: "/wasm/",
+    });
+  }
 
   async function startDocumentScanner() {
-    const config = new ScanbotSDK.UI.Config.BarcodeScannerConfiguration;
+    const config = new DynScanbotSDK.UI.Config.BarcodeScannerConfiguration;
 
     config.palette.sbColorPrimary = "#1E90FF";
     config.palette.sbColorSecondary = "#87CEEB";
@@ -27,12 +34,12 @@ export default function Home() {
     config.topBar.mode = "GRADIENT";
     config.actionBar.zoomButton.backgroundColor = "#1E90FF";
 
-    const useCase = new ScanbotSDK.UI.Config.MultipleScanningMode();
+    const useCase = new DynScanbotSDK.UI.Config.MultipleScanningMode();
     useCase.arOverlay.visible = true;
     useCase.arOverlay.automaticSelectionEnabled = true;
     config.useCase = useCase;
 
-    const result = await ScanbotSDK.UI.createBarcodeScanner(config);
+    const result = await DynScanbotSDK.UI.createBarcodeScanner(config);
 
     if (result && result.items.length > 0) {
       setScanResult(result.items[0].barcode.text);
